@@ -392,6 +392,30 @@ module.exports = {
       },
     },
 
+    "/api/requests/{id}/feedback": {
+      post: {
+        tags: ["Service Requests"],
+        summary: "Requester rates a completed request (once): rating 1–5, fixed yes/no, optional comment",
+        security: bearer,
+        parameters: [idParam],
+        requestBody: json({
+          type: "object",
+          required: ["rating", "resolved"],
+          properties: {
+            rating: { type: "integer", minimum: 1, maximum: 5, example: 5 },
+            resolved: { type: "boolean", example: true },
+            comment: { type: "string", maxLength: 500, example: "Fixed the same day — thank you!" },
+          },
+        }),
+        responses: {
+          201: ok("Feedback saved"),
+          400: ok("Request not completed yet"),
+          403: ok("Not the requester"),
+          409: ok("Already rated"),
+          422: ok("Validation failed"),
+        },
+      },
+    },
     "/api/reports/summary": {
       get: {
         tags: ["Reports (Admin)"],

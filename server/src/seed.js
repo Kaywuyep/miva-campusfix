@@ -197,6 +197,16 @@ async function run({ withDemo = true } = {}) {
         status === "completed"
           ? new Date(createdAt.getTime() + 26 * 3600e3)
           : undefined,
+      // completed samples come with the requester's rating
+      feedback:
+        status === "completed"
+          ? {
+              rating: 4,
+              resolved: true,
+              comment: "Working again — thanks for the quick visit.",
+              submittedAt: new Date(createdAt.getTime() + 30 * 3600e3),
+            }
+          : undefined,
     });
     // back-date the sample so dashboards show realistic dates and fix times
     await ServiceRequest.collection.updateOne(

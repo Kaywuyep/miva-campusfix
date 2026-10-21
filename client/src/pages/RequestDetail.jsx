@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useRequestUpdates } from '../context/SocketContext';
 import StatusBadge, { PriorityTag, STATUS_LABELS } from '../components/StatusBadge';
+import { FeedbackForm, FeedbackSummary } from '../components/Feedback';
 
 const STEPS = ['pending', 'assigned', 'in_progress', 'completed'];
 const when = (d) => new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -54,6 +55,9 @@ export default function RequestDetail() {
     if (!officerId) return toast('Choose an officer first', 'error');
     return act(() => api.patch(`/requests/${id}/assign`, { officerId, note: comment }), 'Officer assigned');
   };
+
+  const sendFeedback = (feedback) =>
+    act(() => api.post(`/requests/${id}/feedback`, feedback), 'Thank you — your feedback has been sent');
 
   const remove = async () => {
     if (!window.confirm('Delete this request permanently?')) return;
@@ -139,6 +143,9 @@ export default function RequestDetail() {
               {req.completedAt && (<><dt>Completed</dt><dd>{when(req.completedAt)}</dd></>)}
             </dl>
           </section>
+
+          {req.status === 'completed' && isOwner && !req.feedback && <FeedbackForm onSubmit={sendFeedback} busy={busy} />}
+          {req.feedback && <FeedbackSummary feedback={req.feedback} mine={isOwner} />}
 
           {/* ----- Actions depend on role ----- */}
           {role === 'officer' && isAssignee && !closed && (

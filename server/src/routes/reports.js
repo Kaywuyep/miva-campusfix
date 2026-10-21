@@ -31,6 +31,17 @@ router.get('/summary', listValidators, validate, asyncHandler(async (req, res) =
     categories.map(async (c) => ({ name: c.name, count: await count({ category: c._id }) }))
   );
 
+  // Requester ratings of completed jobs
+  const rated = await ServiceRequest.find({ $and: [base, { 'feedback.rating': { $exists: true } }] })
+    .select('feedback assignedTo');
+  const average = (list) => (list.length ? +(list.reduce((sum, r) => sum + r.feedback.rating, 0) / list.length).toFixed(1) : null);
+  const satisfaction = {
+    rated: rated.length,
+    avgRating: average(rated),
+    notFixed: rated.filter((r) => !r.feedback.resolved).length,
+    byStars: [1, 2, 3, 4, 5].map((n) => rated.filter((r) => r.feedback.rating === n).length),
+  };
+
   const officerRole = await Role.findOne({ name: 'officer' });
   const officers = await User.find({ role: officerRole._id }).sort({ name: 1 });
   const byOfficer = await Promise.all(
@@ -38,6 +49,7 @@ router.get('/summary', listValidators, validate, asyncHandler(async (req, res) =
       name: o.name,
       open: await count({ assignedTo: o._id, status: { $in: ['assigned', 'in_progress'] } }),
       completed: await count({ assignedTo: o._id, status: 'completed' }),
+      avgRating: average(rated.filter((r) => String(r.assignedTo) === String(o._id))),
     }))
   );
 
@@ -52,7 +64,7 @@ router.get('/summary', listValidators, validate, asyncHandler(async (req, res) =
     success: true,
     data: {
       total: statusCounts.reduce((a, b) => a + b, 0),
-      byStatus, byPriority, byCategory, byOfficer, avgResolutionHours,
+      byStatus, byPriority, byCategory, byOfficer, avgResolutionHours, satisfaction,
       generatedAt: new Date(),
     },
   });
@@ -91,11 +103,12 @@ router.get('/export', listValidators, validate, asyncHandler(async (req, res) =>
     [],
   ].map((r) => r.map(esc).join(','));
 
-  const header = ['Ticket', 'Title', 'Category', 'Location', 'Priority', 'Status', 'Requester', 'Requester Email', 'Assigned To', 'Created', 'Completed'];
+  const header = ['Ticket', 'Title', 'Category', 'Location', 'Priority', 'Status', 'Requester', 'Requester Email', 'Assigned To', 'Created', 'Completed', 'Rating', 'Fixed', 'Feedback'];
   const lines = rows.map((r) => [
     r.ticketNo, r.title, r.category?.name, r.location, r.priority, r.status,
     r.requester?.name, r.requester?.email, r.assignedTo?.name || '',
     r.createdAt.toISOString(), r.completedAt ? r.completedAt.toISOString() : '',
+    r.feedback?.rating ?? '', r.feedback ? (r.feedback.resolved ? 'yes' : 'no') : '', r.feedback?.comment || '',
   ].map(esc).join(','));
 
   await audit(req, 'REPORT_EXPORTED', 'ServiceRequest', undefined, `${rows.length} rows`);

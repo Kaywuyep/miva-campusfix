@@ -16,6 +16,19 @@ const serviceRequestSchema = new mongoose.Schema(
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     attachments: [{ filename: String, url: String, mimetype: String }],
     completedAt: Date,
+    // The requester's rating once the job is completed (one per request, embedded)
+    feedback: {
+      type: new mongoose.Schema(
+        {
+          rating: { type: Number, min: 1, max: 5, required: true },
+          resolved: { type: Boolean, required: true }, // "Was the problem fixed?"
+          comment: { type: String, trim: true, maxlength: 500 },
+          submittedAt: { type: Date, default: Date.now },
+        },
+        { _id: false }
+      ),
+      default: undefined,
+    },
   },
   { timestamps: true }
 );

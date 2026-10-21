@@ -9,7 +9,8 @@ const summary = {
   byStatus: { pending: 1, assigned: 0, in_progress: 1, completed: 1, cancelled: 0 },
   byPriority: { low: 1, medium: 1, high: 1, urgent: 0 },
   byCategory: [{ name: "Electrical", count: 3 }],
-  byOfficer: [{ name: "Ada Officer", open: 1, completed: 1 }],
+  byOfficer: [{ name: "Ada Officer", open: 1, completed: 1, avgRating: 4.5 }],
+  satisfaction: { rated: 2, avgRating: 4.5, notFixed: 1, byStars: [0, 0, 0, 1, 1] },
   avgResolutionHours: 5,
   generatedAt: "2026-10-21T10:00:00.000Z",
 };
@@ -46,6 +47,8 @@ describe("Reports page", () => {
     const dialog = await screen.findByRole("dialog", { name: /maintenance report/i });
     expect(get).toHaveBeenCalledWith("/reports/summary", { params: { status: "completed" } });
     expect(within(dialog).getByText(/Status: Completed/)).toBeInTheDocument();
+    expect(within(dialog).getByText("Requester satisfaction")).toBeInTheDocument();
+    expect(within(dialog).getByText("1 not fixed")).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: /download csv/i })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: /print/i })).toBeInTheDocument();
   });

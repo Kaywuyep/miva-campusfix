@@ -228,6 +228,8 @@ router.patch(
 
     request.status = next;
     request.completedAt = next === 'completed' ? new Date() : undefined;
+    // Re-opened by an admin: the old rating no longer describes the outcome (it stays in the audit log)
+    if (prev === 'completed') request.feedback = undefined;
     await request.save();
 
     await StatusLog.create({ request: request._id, fromStatus: prev, toStatus: next, comment: req.body.comment, changedBy: req.user._id });
@@ -235,11 +237,48 @@ router.patch(
 
     const label = next.replace('_', ' ');
     if (String(request.requester._id) !== String(req.user._id)) {
-      await notify(request.requester._id, `Your request ${request.ticketNo} is now ${label}`, request._id);
+      const ask = next === 'completed' ? ' — please rate the repair' : '';
+      await notify(request.requester._id, `Your request ${request.ticketNo} is now ${label}${ask}`, request._id);
     }
     broadcastRequest(request);
 
     res.json({ success: true, message: `Status changed to ${label}`, data: request });
+  })
+);
+
+// POST /api/requests/:id/feedback — the requester rates a completed job (once)
+router.post(
+  '/:id/feedback',
+  [
+    body('rating').isInt({ min: 1, max: 5 }).withMessage('Choose a rating from 1 to 5').toInt(),
+    body('resolved').isBoolean().withMessage('Tell us whether the problem was fixed').toBoolean(),
+    body('comment').optional().trim().isLength({ max: 500 }).withMessage('Comment must be 500 characters or fewer'),
+  ],
+  validate,
+  asyncHandler(async (req, res) => {
+    const request = await loadRequestForUser(req.params.id, req.user);
+    if (String(request.requester._id) !== String(req.user._id)) {
+      throw new ApiError(403, 'Only the person who submitted the request can rate it');
+    }
+    if (request.status !== 'completed') throw new ApiError(400, 'You can rate a request once it is completed');
+    if (request.feedback) throw new ApiError(409, 'You have already rated this request');
+
+    const { rating, resolved, comment } = req.body;
+    request.feedback = { rating, resolved, comment };
+    await request.save();
+    await audit(req, 'FEEDBACK_SUBMITTED', 'ServiceRequest', request._id, `${request.ticketNo}: ${rating}/5, ${resolved ? 'fixed' : 'not fixed'}`);
+
+    // Admins (and the officer who did the job) hear about it; "not fixed" is flagged
+    const message = resolved
+      ? `${request.requester.name} rated ${request.ticketNo} ${rating}/5`
+      : `${request.requester.name} says ${request.ticketNo} is NOT fixed (${rating}/5)`;
+    const admins = await User.find({ isActive: true }).populate('role');
+    const recipients = admins.filter((u) => u.role.name === 'admin').map((a) => a._id);
+    if (request.assignedTo) recipients.push(request.assignedTo._id);
+    await Promise.all(recipients.map((id) => notify(id, message, request._id)));
+    broadcastRequest(request);
+
+    res.status(201).json({ success: true, message: 'Thank you for your feedback', data: request.feedback });
   })
 );
 

@@ -176,6 +176,53 @@ describe("Assignment and status workflow", () => {
   });
 });
 
+describe("Requester feedback", () => {
+  test("only the requester can rate, and the rating is validated", async () => {
+    expect(
+      (await request(app).post(`/api/requests/${newId}/feedback`).set(auth(officer)).send({ rating: 5, resolved: true })).status,
+    ).toBe(403);
+    const bad = await request(app).post(`/api/requests/${newId}/feedback`).set(auth(student)).send({ rating: 9 });
+    expect(bad.status).toBe(422);
+    expect(bad.body.errors.map((e) => e.field)).toEqual(expect.arrayContaining(["rating", "resolved"]));
+  });
+
+  test("a request that is not completed cannot be rated", async () => {
+    const mine = await request(app).get("/api/requests?status=pending").set(auth(student));
+    const pending = mine.body.data[0]._id;
+    const res = await request(app).post(`/api/requests/${pending}/feedback`).set(auth(student)).send({ rating: 4, resolved: true });
+    expect(res.status).toBe(400);
+  });
+
+  test("requester rates the completed job once; admin and officer are told", async () => {
+    const res = await request(app)
+      .post(`/api/requests/${newId}/feedback`)
+      .set(auth(student))
+      .send({ rating: 5, resolved: true, comment: "Fixed the same day" });
+    expect(res.status).toBe(201);
+    expect(res.body.data).toMatchObject({ rating: 5, resolved: true, comment: "Fixed the same day" });
+
+    const detail = await request(app).get(`/api/requests/${newId}`).set(auth(admin));
+    expect(detail.body.data.feedback.rating).toBe(5);
+
+    const again = await request(app).post(`/api/requests/${newId}/feedback`).set(auth(student)).send({ rating: 1, resolved: false });
+    expect(again.status).toBe(409);
+
+    const adminNotes = await request(app).get("/api/notifications").set(auth(admin));
+    expect(adminNotes.body.data.some((n) => /rated .* 5\/5/.test(n.message))).toBe(true);
+    const officerNotes = await request(app).get("/api/notifications").set(auth(officer));
+    expect(officerNotes.body.data.some((n) => /rated/.test(n.message))).toBe(true);
+  });
+
+  test("reports include requester satisfaction and the CSV has the rating", async () => {
+    const res = await request(app).get("/api/reports/summary").set(auth(admin));
+    expect(res.body.data.satisfaction.rated).toBeGreaterThanOrEqual(2); // seeded rating + the one above
+    expect(res.body.data.satisfaction.avgRating).toBeGreaterThan(0);
+    const csv = await request(app).get("/api/reports/export?status=completed").set(auth(admin));
+    expect(csv.text).toContain('"Rating","Fixed","Feedback"');
+    expect(csv.text).toContain('"5","yes","Fixed the same day"');
+  });
+});
+
 describe("Admin reports, export and audit log", () => {
   test("summary counts by status and category", async () => {
     const res = await request(app).get("/api/reports/summary").set(auth(admin));

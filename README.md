@@ -4,6 +4,10 @@ Full-stack MERN web application (MongoDB, Express, React, Node.js) for MIT 8333 
 
 Students and staff submit maintenance requests (electricity, furniture, plumbing, internet, classroom equipment, hostel issues) with photo evidence. Administrators assign them to maintenance officers, officers update progress, and everyone follows the request live until it is completed.
 
+- **Live app:** https://miva-campusfix.onrender.com/
+- **API docs:** https://miva-campusfix.onrender.com/api/docs/
+- **Repository:** https://github.com/Kaywuyep/miva-campusfix
+
 ## Features
 
 | Requirement                                           | Where                                                                            |
@@ -20,6 +24,7 @@ Students and staff submit maintenance requests (electricity, furniture, plumbing
 | Audit trail / activity log                            | `models/AuditLog.js`, `GET /api/reports/audit`                                   |
 | API documentation (Swagger)                           | `/api/docs`                                                                      |
 | CSV export                                            | `GET /api/reports/export`                                                        |
+| Requester feedback (rate a completed repair)          | `components/Feedback.jsx`, `POST /api/requests/:id/feedback`                     |
 | Report generator (filters → modal → CSV / PDF)        | `pages/admin/Reports.jsx`, `components/Modal.jsx`, `GET /api/reports/summary`    |
 | Branding (logo, favicon, watermark)                   | `client/public/brand/`, `components/Logo.jsx`                                    |
 
@@ -54,8 +59,8 @@ npm run dev                   # app on http://localhost:5173
 ## Tests
 
 ```bash
-cd server && npm test   # 29 API tests (Jest + Supertest) — needs MongoDB running
-cd client && npm test   # 18 component tests (Vitest + React Testing Library)
+cd server && npm test   # 33 API tests (Jest + Supertest) — needs MongoDB running
+cd client && npm test   # 22 component tests (Vitest + React Testing Library)
 ```
 
 The API tests use a separate database (`codespireFix_test`, or set `MONGO_URI_TEST`) and drop it when finished.
@@ -69,6 +74,6 @@ The API tests use a separate database (`codespireFix_test`, or set `MONGO_URI_TE
    - Start command: `npm start`
    - Environment: `NODE_ENV=production`, `MONGO_URI=<Atlas string>`, `JWT_SECRET=<long random string>`
 4. After the first deploy, open the Render **Shell** and run `npm run seed` once.
-5. Check `https://<your-app>.onrender.com/api/health` — it should say `"database": "connected"`.
+5. Check `https://miva-campusfix.onrender.com/api/health` — it should say `"database": "connected"`.
 
 Express serves the React build in production, so the whole app runs at one URL. Note: Render's free disk is temporary, so uploaded photos are lost on redeploy; for permanent storage switch Multer to Cloudinary or S3.

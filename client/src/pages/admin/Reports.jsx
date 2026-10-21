@@ -3,6 +3,7 @@ import api, { errorMessage } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import Logo from "../../components/Logo";
 import Modal from "../../components/Modal";
+import { Stars } from "../../components/Feedback";
 import Pagination from "../../components/Pagination";
 import RequestTable from "../../components/RequestTable";
 import { STATUS_LABELS } from "../../components/StatusBadge";
@@ -330,6 +331,8 @@ export default function Reports() {
 function ReportView({ report, categories, officers }) {
   const { filters, summary, rows } = report;
   const maxCat = Math.max(1, ...summary.byCategory.map((c) => c.count));
+  const satisfaction = summary.satisfaction;
+  const maxStars = Math.max(1, ...satisfaction.byStars);
   const resolved = summary.total
     ? Math.round((summary.byStatus.completed / summary.total) * 100)
     : 0;
@@ -432,6 +435,7 @@ function ReportView({ report, categories, officers }) {
                 <th>Officer</th>
                 <th>Open jobs</th>
                 <th>Completed</th>
+                <th>Avg. rating</th>
               </tr>
             </thead>
             <tbody>
@@ -440,10 +444,53 @@ function ReportView({ report, categories, officers }) {
                   <td>{o.name}</td>
                   <td>{o.open}</td>
                   <td>{o.completed}</td>
+                  <td>{o.avgRating ? `${o.avgRating} ★` : "–"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          <h3>Requester satisfaction</h3>
+          {satisfaction.rated ? (
+            <div className="satisfaction">
+              <div className="satisfaction-score">
+                <strong>{satisfaction.avgRating}</strong>
+                <Stars rating={Math.round(satisfaction.avgRating)} />
+                <small className="muted">
+                  {satisfaction.rated} rated job
+                  {satisfaction.rated > 1 ? "s" : ""}
+                  {satisfaction.notFixed > 0 && (
+                    <>
+                      {" "}
+                      ·{" "}
+                      <span className="not-fixed-count">
+                        {satisfaction.notFixed} not fixed
+                      </span>
+                    </>
+                  )}
+                </small>
+              </div>
+              <div className="bars star-bars">
+                {[5, 4, 3, 2, 1].map((n) => (
+                  <div key={n} className="bar-row">
+                    <span>{n} ★</span>
+                    <div className="bar">
+                      <div
+                        style={{
+                          width: `${(satisfaction.byStars[n - 1] / maxStars) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <strong>{satisfaction.byStars[n - 1]}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="muted">
+              No completed jobs in this report have been rated yet.
+            </p>
+          )}
         </section>
       </div>
 
