@@ -4,6 +4,7 @@ import api from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useRequestUpdates } from '../context/SocketContext';
 import RequestTable from '../components/RequestTable';
+import JobActions from '../components/JobActions';
 
 const CARDS = {
   user: [['total', 'All my requests'], ['pending', 'Awaiting action'], ['in_progress', 'Being fixed'], ['completed', 'Resolved']],
@@ -13,7 +14,7 @@ const CARDS = {
 
 const COPY = {
   user: ['Report a problem and follow it until it is fixed.', 'Recent requests'],
-  officer: ['Jobs assigned to you by the Works department.', 'Jobs that need your attention'],
+  officer: ['Start a job when you begin and mark it completed when you finish — the requester is kept informed.', 'Your open jobs'],
   admin: ['Overview of maintenance activity across campus.', 'New requests waiting to be assigned'],
 };
 
@@ -26,7 +27,7 @@ export default function Dashboard() {
     api.get('/requests/stats').then((r) => setStats(r.data.data));
     const params = { limit: 5 };
     if (role === 'admin') params.status = 'pending';
-    if (role === 'officer') params.status = 'assigned';
+    if (role === 'officer') params.status = 'assigned,in_progress';
     api.get('/requests', { params }).then((r) => setRecent(r.data.data));
   }, [role]);
 
@@ -63,6 +64,7 @@ export default function Dashboard() {
           items={recent}
           showRequester={role !== 'user'}
           showOfficer={role === 'admin'}
+          actions={role === 'officer' ? (r) => <JobActions job={r} onDone={load} compact /> : undefined}
           empty={role === 'user' ? 'You have not submitted any requests yet.' : 'Nothing waiting here — nice work.'}
         />
       </section>

@@ -27,7 +27,8 @@ function scopeFor(user) {
 // Build a MongoDB filter from ?q=&status=&category=&priority=&assignedTo=&from=&to=
 function buildFilter(user, qs) {
   const filter = scopeFor(user);
-  if (qs.status) filter.status = qs.status;
+  // one status, or several separated by commas (e.g. assigned,in_progress)
+  if (qs.status) filter.status = qs.status.includes(',') ? { $in: qs.status.split(',') } : qs.status;
   if (qs.category) filter.category = qs.category;
   if (qs.priority) filter.priority = qs.priority;
   // Only admins may filter by officer; for officers it would widen their scope
@@ -64,7 +65,7 @@ async function loadRequestForUser(id, user) {
 const listValidators = [
   query('page').optional().isInt({ min: 1 }).toInt(),
   query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
-  query('status').optional().isIn(STATUSES).withMessage('Invalid status'),
+  query('status').optional().custom((v) => String(v).split(',').every((s) => STATUSES.includes(s))).withMessage('Invalid status'),
   query('priority').optional().isIn(PRIORITIES).withMessage('Invalid priority'),
   query('category').optional().isMongoId().withMessage('Invalid category'),
   query('assignedTo').optional().isMongoId().withMessage('Invalid officer'),

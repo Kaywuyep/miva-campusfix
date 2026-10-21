@@ -3,7 +3,7 @@ import StatusBadge, { PriorityTag } from './StatusBadge';
 
 const fmt = (d) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-export default function RequestTable({ items, showRequester, showOfficer, empty = 'No requests found.' }) {
+export default function RequestTable({ items, showRequester, showOfficer, actions, empty = 'No requests found.' }) {
   if (!items.length) return <div className="empty">{empty}</div>;
   return (
     <div className="table-wrap">
@@ -18,6 +18,7 @@ export default function RequestTable({ items, showRequester, showOfficer, empty 
             <th>Priority</th>
             <th>Status</th>
             <th>Date</th>
+            {actions && <th>Next step</th>}
           </tr>
         </thead>
         <tbody>
@@ -34,6 +35,7 @@ export default function RequestTable({ items, showRequester, showOfficer, empty 
               <td><PriorityTag priority={r.priority} /></td>
               <td><StatusBadge status={r.status} /></td>
               <td className="nowrap">{fmt(r.createdAt)}</td>
+              {actions && <td className="nowrap">{actions(r)}</td>}
             </tr>
           ))}
         </tbody>

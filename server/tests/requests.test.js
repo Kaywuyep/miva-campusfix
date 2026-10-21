@@ -320,6 +320,13 @@ describe("Officer completing an assigned job", () => {
     expect(res.body.data.every((r) => !r.assignedTo)).toBe(true);
   });
 
+  test("an officer can list all open jobs at once (several statuses)", async () => {
+    const res = await request(app).get("/api/requests?status=assigned,in_progress").set(auth(officer));
+    expect(res.status).toBe(200);
+    expect(res.body.data.every((r) => ["assigned", "in_progress"].includes(r.status))).toBe(true);
+    expect((await request(app).get("/api/requests?status=assigned,done").set(auth(officer))).status).toBe(422);
+  });
+
   test("an officer can mark an assigned job completed without starting it first", async () => {
     const mine = await request(app).get("/api/requests?status=assigned").set(auth(plumber));
     expect(mine.body.data.length).toBeGreaterThan(0);

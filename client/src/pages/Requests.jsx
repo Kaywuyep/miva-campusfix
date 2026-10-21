@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useRequestUpdates } from '../context/SocketContext';
 import RequestTable from '../components/RequestTable';
+import JobActions from '../components/JobActions';
 import Pagination from '../components/Pagination';
 import { STATUS_LABELS } from '../components/StatusBadge';
 
@@ -93,7 +94,9 @@ export default function Requests() {
           </select>
         </div>
         <div className={loading ? 'loading-fade' : ''}>
-          <RequestTable items={result.data} showRequester={role !== 'user'} showOfficer={role === 'admin'} empty="No requests match your search." />
+          <RequestTable items={result.data} showRequester={role !== 'user'} showOfficer={role === 'admin'}
+            actions={role === 'officer' ? (r) => <JobActions job={r} onDone={load} compact /> : undefined}
+            empty="No requests match your search." />
         </div>
         <Pagination pagination={result.pagination} onChange={setPage} />
       </section>

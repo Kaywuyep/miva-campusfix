@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { useRequestUpdates } from '../context/SocketContext';
 import StatusBadge, { PriorityTag, STATUS_LABELS } from '../components/StatusBadge';
 import { FeedbackForm, FeedbackSummary } from '../components/Feedback';
+import JobActions from '../components/JobActions';
 
 const STEPS = ['pending', 'assigned', 'in_progress', 'completed'];
 const when = (d) => new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -148,14 +149,16 @@ export default function RequestDetail() {
           {req.feedback && <FeedbackSummary feedback={req.feedback} mine={isOwner} />}
 
           {/* ----- Actions depend on role ----- */}
-          {role === 'officer' && isAssignee && !closed && (
+          {role === 'officer' && isAssignee && (
             <section className="card card-pad action-card">
               <h2>Update progress</h2>
-              <textarea rows={3} placeholder="Add a note for the requester (optional)" value={comment} onChange={(e) => setComment(e.target.value)} />
-              <div className="btn-row">
-                {['pending', 'assigned'].includes(req.status) && <button type="button" className="btn btn-primary" disabled={busy} onClick={() => setStatus('in_progress')}>Start job</button>}
-                <button type="button" className="btn btn-success" disabled={busy} onClick={() => setStatus('completed')}>Mark completed</button>
-              </div>
+              <p className="muted next-step">
+                {['pending', 'assigned'].includes(req.status) && 'This job is assigned to you. Press Start job when you begin — the requester will see it is in progress.'}
+                {req.status === 'in_progress' && 'You are working on this job. Mark it completed when you finish; add a short note for the requester.'}
+                {req.status === 'completed' && (req.feedback ? 'Job completed and rated by the requester.' : 'Job completed. The requester has been asked to rate the repair.')}
+                {req.status === 'cancelled' && 'This request was cancelled.'}
+              </p>
+              <JobActions job={req} onDone={load} />
             </section>
           )}
 
