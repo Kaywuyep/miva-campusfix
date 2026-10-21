@@ -59,7 +59,7 @@ npm run dev                   # app on http://localhost:5173
 ## Tests
 
 ```bash
-cd server && npm test   # 33 API tests (Jest + Supertest) — needs MongoDB running
+cd server && npm test   # 35 API tests (Jest + Supertest) — needs MongoDB running
 cd client && npm test   # 22 component tests (Vitest + React Testing Library)
 ```
 

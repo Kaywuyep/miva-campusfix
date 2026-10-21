@@ -144,7 +144,7 @@ async function run({ withDemo = true } = {}) {
       "The Wi-Fi network is not visible in the IT department offices on floor 2.",
       "ICT Building, Floor 2",
       "high",
-      "pending",
+      "assigned",
       officer3,
       1,
     ],

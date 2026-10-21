@@ -153,7 +153,7 @@ export default function RequestDetail() {
               <h2>Update progress</h2>
               <textarea rows={3} placeholder="Add a note for the requester (optional)" value={comment} onChange={(e) => setComment(e.target.value)} />
               <div className="btn-row">
-                {req.status === 'assigned' && <button type="button" className="btn btn-primary" disabled={busy} onClick={() => setStatus('in_progress')}>Start job</button>}
+                {['pending', 'assigned'].includes(req.status) && <button type="button" className="btn btn-primary" disabled={busy} onClick={() => setStatus('in_progress')}>Start job</button>}
                 <button type="button" className="btn btn-success" disabled={busy} onClick={() => setStatus('completed')}>Mark completed</button>
               </div>
             </section>

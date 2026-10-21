@@ -313,3 +313,23 @@ describe("Admin reports, export and audit log", () => {
     ).toBe(404);
   });
 });
+
+describe("Officer completing an assigned job", () => {
+  test("no job given to an officer is left pending", async () => {
+    const res = await request(app).get("/api/requests?status=pending&limit=100").set(auth(admin));
+    expect(res.body.data.every((r) => !r.assignedTo)).toBe(true);
+  });
+
+  test("an officer can mark an assigned job completed without starting it first", async () => {
+    const mine = await request(app).get("/api/requests?status=assigned").set(auth(plumber));
+    expect(mine.body.data.length).toBeGreaterThan(0);
+    const job = mine.body.data[0]._id;
+    const res = await request(app)
+      .patch(`/api/requests/${job}/status`)
+      .set(auth(plumber))
+      .send({ status: "completed", comment: "Pipe joint replaced" });
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe("completed");
+    expect(res.body.data.completedAt).toBeTruthy();
+  });
+});
