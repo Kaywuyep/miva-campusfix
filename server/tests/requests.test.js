@@ -193,6 +193,13 @@ describe("Requester feedback", () => {
     expect(res.status).toBe(400);
   });
 
+  test("the requester can list completed jobs still waiting for their rating", async () => {
+    const res = await request(app).get("/api/requests?status=completed&rated=false").set(auth(student));
+    expect(res.status).toBe(200);
+    expect(res.body.data.map((r) => r._id)).toContain(newId);
+    expect(res.body.data.every((r) => r.status === "completed" && !r.feedback)).toBe(true);
+  });
+
   test("requester rates the completed job once; admin and officer are told", async () => {
     const res = await request(app)
       .post(`/api/requests/${newId}/feedback`)
@@ -206,6 +213,9 @@ describe("Requester feedback", () => {
 
     const again = await request(app).post(`/api/requests/${newId}/feedback`).set(auth(student)).send({ rating: 1, resolved: false });
     expect(again.status).toBe(409);
+
+    const waiting = await request(app).get("/api/requests?status=completed&rated=false").set(auth(student));
+    expect(waiting.body.data.map((r) => r._id)).not.toContain(newId);
 
     const adminNotes = await request(app).get("/api/notifications").set(auth(admin));
     expect(adminNotes.body.data.some((n) => /rated .* 5\/5/.test(n.message))).toBe(true);

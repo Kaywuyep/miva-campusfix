@@ -22,7 +22,7 @@ export function Stars({ rating, size = '' }) {
 }
 
 // Shown to the requester once their request is completed
-export function FeedbackForm({ onSubmit, busy }) {
+export function FeedbackForm({ onSubmit, busy, embedded = false }) {
   const [form, setForm] = useState({ rating: 0, resolved: null, comment: '' });
   const [hover, setHover] = useState(0);
   const [errors, setErrors] = useState({});
@@ -42,9 +42,13 @@ export function FeedbackForm({ onSubmit, busy }) {
 
   const shown = hover || form.rating;
   return (
-    <form className="card card-pad action-card feedback" onSubmit={submit} noValidate>
-      <h2>How did we do?</h2>
-      <p className="muted">Your request is complete. Rating the repair helps the Works department improve.</p>
+    <form className={embedded ? 'feedback' : 'card card-pad action-card feedback'} onSubmit={submit} noValidate>
+      {!embedded && (
+        <>
+          <h2>How did we do?</h2>
+          <p className="muted">Your request is complete. Rating the repair helps the Works department improve.</p>
+        </>
+      )}
 
       <fieldset className="field">
         <legend>Was the problem fixed?</legend>

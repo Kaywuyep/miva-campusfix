@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { useRequestUpdates } from '../context/SocketContext';
 import RequestTable from '../components/RequestTable';
 import JobActions from '../components/JobActions';
+import RatePrompt from '../components/RatePrompt';
+import RatingCell from '../components/RatingCell';
 
 const CARDS = {
   user: [['total', 'All my requests'], ['pending', 'Awaiting action'], ['in_progress', 'Being fixed'], ['completed', 'Resolved']],
@@ -46,6 +48,8 @@ export default function Dashboard() {
         {role !== 'officer' && <Link to="/requests/new" className="btn btn-primary">+ New request</Link>}
       </div>
 
+      {role === 'user' && <RatePrompt />}
+
       <div className="stats">
         {CARDS[role].map(([key, label]) => (
           <div key={key} className={`stat stat-${key}`}>
@@ -64,7 +68,9 @@ export default function Dashboard() {
           items={recent}
           showRequester={role !== 'user'}
           showOfficer={role === 'admin'}
-          actions={role === 'officer' ? (r) => <JobActions job={r} onDone={load} compact /> : undefined}
+          actions={role === 'officer' ? (r) => <JobActions job={r} onDone={load} compact />
+            : role === 'user' ? (r) => <RatingCell request={r} /> : undefined}
+          actionsLabel={role === 'user' ? 'Your rating' : 'Next step'}
           empty={role === 'user' ? 'You have not submitted any requests yet.' : 'Nothing waiting here — nice work.'}
         />
       </section>

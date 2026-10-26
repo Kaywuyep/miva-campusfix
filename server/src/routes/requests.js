@@ -31,6 +31,9 @@ function buildFilter(user, qs) {
   if (qs.status) filter.status = qs.status.includes(',') ? { $in: qs.status.split(',') } : qs.status;
   if (qs.category) filter.category = qs.category;
   if (qs.priority) filter.priority = qs.priority;
+  // rated=false → completed jobs still waiting for the requester's rating
+  if (qs.rated === 'false') filter.feedback = { $exists: false };
+  if (qs.rated === 'true') filter.feedback = { $exists: true };
   // Only admins may filter by officer; for officers it would widen their scope
   if (qs.assignedTo && user.role.name === 'admin') filter.assignedTo = qs.assignedTo;
   // Date range on submission date; "to" is inclusive of the whole day
@@ -69,6 +72,7 @@ const listValidators = [
   query('priority').optional().isIn(PRIORITIES).withMessage('Invalid priority'),
   query('category').optional().isMongoId().withMessage('Invalid category'),
   query('assignedTo').optional().isMongoId().withMessage('Invalid officer'),
+  query('rated').optional().isIn(['true', 'false']).withMessage('rated must be true or false'),
   query('from').optional().isISO8601().withMessage('Invalid start date'),
   query('to').optional().isISO8601().withMessage('Invalid end date'),
 ];

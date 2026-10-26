@@ -59,8 +59,8 @@ npm run dev                   # app on http://localhost:5173
 ## Tests
 
 ```bash
-cd server && npm test   # 36 API tests (Jest + Supertest) — needs MongoDB running
-cd client && npm test   # 26 component tests (Vitest + React Testing Library)
+cd server && npm test   # 37 API tests (Jest + Supertest) — needs MongoDB running
+cd client && npm test   # 29 component tests (Vitest + React Testing Library)
 ```
 
 The API tests use a separate database (`codespireFix_test`, or set `MONGO_URI_TEST`) and drop it when finished.
